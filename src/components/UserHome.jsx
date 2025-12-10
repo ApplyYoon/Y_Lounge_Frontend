@@ -152,7 +152,7 @@ const UserHome = ({ user, onLogout }) => {
 
     // Audio Initialization
     useEffect(() => {
-        audioRef.current = new Audio("/bonfire_mood.mp3");
+        audioRef.current = new Audio("https://github.com/ApplyYoon/Y_Lounge_Frontend/releases/download/v1.0.0/bonfire_mood.mp3");
         audioRef.current.loop = true;
         audioRef.current.volume = 0.4;
 

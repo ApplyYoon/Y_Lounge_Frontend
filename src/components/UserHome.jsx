@@ -681,6 +681,6 @@ return (
             `}</style>
     </div>
 );
-};
+
 
 export default UserHome;

@@ -9,7 +9,7 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
 
     // Scale size: Base + dramatic growth
     const baseScale = size === 'large' ? 1.2 : 0.8;
-    const growthFactor = size === 'large' ? 0.1 : 0.03;
+    const growthFactor = size === 'large' ? 0.1 : 0.04; // Slightly increased back from 0.02
     const scale = baseScale + (Math.max(0, intensity - 1) * growthFactor); // Don't shrink below base for 0 users
 
     // Fire warmth shifts from yellow/orange to raging red/white at high intensity
@@ -20,26 +20,28 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
     // else stage = 1 (Levels 1-3)
 
     // Color Palettes
-    // Stage 1: Pale / Yellow / Gentle (Lighter)
+    // Stage 1: Pale / Yellow / Gentle (Lighter) - Remains the same
     const s1_glow = '#ffcc00';
     const s1_grad = 'radial-gradient(white, #fff7e6, #ffcc00, #ffaa00)';
-    const s1_red = 'rgba(255, 140, 0, 0.6)'; // Dark Orange transparency
+    const s1_red = 'rgba(255, 140, 0, 0.6)';
     const s1_orange = '#ffb300';
     const s1_gold = '#ffeb3b';
 
-    // Stage 2: Standard Orange / Red (Current Default)
-    const s2_glow = '#ff4d00';
-    const s2_grad = 'radial-gradient(white, gold, orange, red)';
-    const s2_red = 'rgba(255, 69, 0, 0.7)';
-    const s2_orange = 'orange';
-    const s2_gold = 'gold';
+    // Stage 2: Mixed / Warm Orange (New Intermediate)
+    // Between Yellow (S1) and Red/Orange (Old S2/New S3)
+    const s2_glow = '#ff8800';
+    const s2_grad = 'radial-gradient(white, #ffeb3b, #ff9800, #ff5722)';
+    const s2_red = 'rgba(255, 87, 34, 0.7)'; // S1 is 255,140,0 -> S3 is 255,69,0. This is in between.
+    const s2_orange = '#ff9100'; // Deep Orange
+    const s2_gold = '#ffc107'; // Amber
 
-    // Stage 3: Intense / Dark Red / Furious (Darker)
-    const s3_glow = '#ff2a00';
-    const s3_grad = 'radial-gradient(white, #ffb700, #ff4500, #8b0000)'; // Ends in DarkRed
-    const s3_red = 'rgba(139, 0, 0, 0.85)'; // Darker Red
-    const s3_orange = '#ff4500'; // OrangeRed
-    const s3_gold = '#ff8c00'; // DarkOrange
+    // Stage 3: Standard Orange / Red (Previously Stage 2)
+    // The previous Stage 3 (Dark Red) is removed/replaced by this one as the max intensity.
+    const s3_glow = '#ff4d00';
+    const s3_grad = 'radial-gradient(white, gold, orange, red)';
+    const s3_red = 'rgba(255, 69, 0, 0.7)';
+    const s3_orange = 'orange';
+    const s3_gold = 'gold';
 
     // Active Colors
     let activeGlow = s1_glow;
@@ -166,20 +168,20 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
                     animation: burn 1s infinite alternate ease-in-out;
                 }
                 .flame.red {
-                    width: ${30 + (intensity * 2)}px; 
+                    width: ${30 + (intensity * 1.8)}px; 
                     height: ${50 + (intensity * 3.5)}px; 
                     background: ${activeRed}; 
                     animation-duration: 1.2s;
                 }
                 .flame.orange { 
                     width: ${25 + (intensity * 1.5)}px; 
-                    height: ${40 + (intensity * 3)}px; 
+                    height: ${40 + (intensity * 2.8)}px; 
                     background: ${activeOrange}; 
                     animation-duration: 1.5s;
                     bottom: 5px;
                 }
                 .flame.gold { 
-                    width: ${20 + (intensity * 1)}px; 
+                    width: ${20 + (intensity * 1.2)}px; 
                     height: ${30 + (intensity * 2)}px; 
                     background: ${activeGold}; 
                     animation-duration: 0.8s;

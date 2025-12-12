@@ -3,17 +3,64 @@ import React, { useEffect, useState } from 'react';
 const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'normal' }) => {
     // Determine fire intensity: 0-10
     // Use explicit 'level' if provided (Game Mode), otherwise fallback to userCount (Lobby Mode)
-    // Scale level (0-5) to intensity (0-10) for visual impact
-    const intensity = level !== undefined ? Math.min(level * 2, 10) : Math.min(userCount || 0, 10);
+    // Level 10 maps to Intensity 10 (max visual)
+    const intensity = level !== undefined ? Math.min(level, 10) : Math.min(userCount || 0, 10);
     const isExtinguished = intensity === 0;
 
     // Scale size: Base + dramatic growth
-    const baseScale = size === 'large' ? 2.0 : 0.8;
-    const growthFactor = size === 'large' ? 0.2 : 0.05;
+    const baseScale = size === 'large' ? 1.2 : 0.8;
+    const growthFactor = size === 'large' ? 0.1 : 0.05;
     const scale = baseScale + (Math.max(0, intensity - 1) * growthFactor); // Don't shrink below base for 0 users
 
     // Fire warmth shifts from yellow/orange to raging red/white at high intensity
-    const fireColor = intensity > 5 ? '#ff4d00' : '#ff9a00';
+    // Stage Logic
+    let stage = 1;
+    if (intensity >= 7) stage = 3;
+    else if (intensity >= 4) stage = 2;
+    // else stage = 1 (Levels 1-3)
+
+    // Color Palettes
+    // Stage 1: Pale / Yellow / Gentle (Lighter)
+    const s1_glow = '#ffcc00';
+    const s1_grad = 'radial-gradient(white, #fff7e6, #ffcc00, #ffaa00)';
+    const s1_red = 'rgba(255, 140, 0, 0.6)'; // Dark Orange transparency
+    const s1_orange = '#ffb300';
+    const s1_gold = '#ffeb3b';
+
+    // Stage 2: Standard Orange / Red (Current Default)
+    const s2_glow = '#ff4d00';
+    const s2_grad = 'radial-gradient(white, gold, orange, red)';
+    const s2_red = 'rgba(255, 69, 0, 0.7)';
+    const s2_orange = 'orange';
+    const s2_gold = 'gold';
+
+    // Stage 3: Intense / Dark Red / Furious (Darker)
+    const s3_glow = '#ff2a00';
+    const s3_grad = 'radial-gradient(white, #ffb700, #ff4500, #8b0000)'; // Ends in DarkRed
+    const s3_red = 'rgba(139, 0, 0, 0.85)'; // Darker Red
+    const s3_orange = '#ff4500'; // OrangeRed
+    const s3_gold = '#ff8c00'; // DarkOrange
+
+    // Active Colors
+    let activeGlow = s1_glow;
+    let activeGrad = s1_grad;
+    let activeRed = s1_red;
+    let activeOrange = s1_orange;
+    let activeGold = s1_gold;
+
+    if (stage === 2) {
+        activeGlow = s2_glow;
+        activeGrad = s2_grad;
+        activeRed = s2_red;
+        activeOrange = s2_orange;
+        activeGold = s2_gold;
+    } else if (stage === 3) {
+        activeGlow = s3_glow;
+        activeGrad = s3_grad;
+        activeRed = s3_red;
+        activeOrange = s3_orange;
+        activeGold = s3_gold;
+    }
 
     return (
         <div
@@ -104,7 +151,7 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
                     bottom: 12px;
                     width: 60px;
                     height: 60px;
-                    filter: drop-shadow(0 0 ${intensity * 2}px ${fireColor});
+                    filter: drop-shadow(0 0 ${intensity * 2}px ${activeGlow});
                 }
                 .flame {
                     position: absolute;
@@ -114,27 +161,27 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
                     width: ${20 + (intensity * 2)}px;
                     height: ${20 + (intensity * 2)}px;
                     border-radius: 50% 50% 20% 20%;
-                    background: radial-gradient(white, gold, orange, red);
+                    background: ${activeGrad};
                     opacity: 0.8;
                     animation: burn 1s infinite alternate ease-in-out;
                 }
                 .flame.red {
                     width: ${30 + (intensity * 3)}px; 
                     height: ${50 + (intensity * 5)}px; 
-                    background: rgba(255, 69, 0, 0.7); 
+                    background: ${activeRed}; 
                     animation-duration: 1.2s;
                 }
                 .flame.orange { 
                     width: ${25 + (intensity * 2)}px; 
                     height: ${40 + (intensity * 4)}px; 
-                    background: orange; 
+                    background: ${activeOrange}; 
                     animation-duration: 1.5s;
                     bottom: 5px;
                 }
                 .flame.gold { 
                     width: ${20 + (intensity * 1.5)}px; 
                     height: ${30 + (intensity * 3)}px; 
-                    background: gold; 
+                    background: ${activeGold}; 
                     animation-duration: 0.8s;
                     bottom: 10px;
                 }
@@ -151,7 +198,7 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
                     position: absolute;
                     bottom: 20px;
                     width: 4px; height: 4px;
-                    background: #ffcc00;
+                    background: ${activeGold};
                     border-radius: 50%;
                     animation: flyUp 2s infinite linear;
                     opacity: 0;

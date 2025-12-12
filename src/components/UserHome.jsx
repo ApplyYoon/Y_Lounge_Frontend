@@ -17,7 +17,7 @@ const UserHome = ({ user, onLogout }) => {
     const [chatBubbles, setChatBubbles] = useState({});
     const [isMuted, setIsMuted] = useState(false);
 
-    const [fireLevel, setFireLevel] = useState(0); // 0-5
+    const [fireLevel, setFireLevel] = useState(0); // 0-10
     const [burnTimer, setBurnTimer] = useState(180); // Seconds until level drop
 
     // Refs for accessing state in closures without triggering re-renders
@@ -198,14 +198,14 @@ const UserHome = ({ user, onLogout }) => {
     const addFirewood = () => {
         if (fireLevel === 0) return; // Must be ignited first
 
-        setFireLevel(prev => Math.min(5, prev + 1));
+        setFireLevel(prev => Math.min(10, prev + 1));
         setBurnTimer(180); // Reset decay
 
         if (stompClientRef.current && stompClientRef.current.connected) {
             // Since setFireLevel is async, we can't trust 'fireLevel' here immediately.
             // Use the ref to get the current state for broadcast.
             const current = fireLevelRef.current;
-            const next = Math.min(5, current + 1);
+            const next = Math.min(10, current + 1);
             stompClientRef.current.publish({
                 destination: `/app/signal/${currentRoom}`,
                 body: JSON.stringify({ type: 'fire_update', level: next, sender: user.username })
@@ -471,22 +471,36 @@ const UserHome = ({ user, onLogout }) => {
 // Stateless Sub-component for Circular Layout
 // Stateless Sub-component for Circular Layout
 const RoomParticipantsCircle = ({ participants, chatBubbles, currentUser }) => {
-    const innerRadius = 250; // distance from fire for inner semi‑circle
-    const outerRadius = 350; // larger outer circle for remaining participants
+    // Distance from center (bonfire)
+    const innerRadius = 300;
+    const outerRadius = 450;
+
     const total = participants.length;
-    const innerCount = Math.ceil(total / 2);
-    const outerCount = total - innerCount;
+    // Distribute logic:
+    // If few users, single row. If many, two rows.
+    // We want them "below" the fire (y > 0).
+    // Angles: 0 (Right) to PI (Left).
+    // We want to avoid 0 and PI exactly to keep them slightly "in front".
+    // Let's use range [PI/8, 7PI/8] (approx 22.5 deg to 157.5 deg).
+
+    // Split into rows
+    const innerCount = total > 8 ? Math.ceil(total / 2) : total;
+    const outerCount = total > 8 ? total - innerCount : 0;
 
     // Helper to render a participant avatar with optional chat bubbles
     const renderParticipant = (username, radius, angle) => {
         const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-        const yPersp = y * 0.7; // flatten perspective
+        const y = radius * Math.sin(angle); // Positive y is DOWN (front of fire)
+        const yPersp = y * 0.8; // flatten perspective slightly
+
         const bubbles = chatBubbles[username] || [];
         const isMe = username === currentUser;
+
+        // Color Logic: Grey/Silver Theme
         const baseColor = isMe ? '#e5e7eb' : '#9ca3af';
         const bodyColor = isMe ? '#d1d5db' : '#6b7280';
         const borderColor = isMe ? '#ffffff' : '#4b5563';
+
         return (
             <div key={username} style={{
                 position: 'absolute',
@@ -494,12 +508,13 @@ const RoomParticipantsCircle = ({ participants, chatBubbles, currentUser }) => {
                 transform: 'translate(-50%, -50%)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 transition: 'all 0.5s ease-out',
+                zIndex: Math.floor(y) // Higher Y (closer to front) -> Higher Z-index
             }}>
                 {/* Chat Bubbles */}
                 <div style={{
                     position: 'absolute', bottom: '100%', marginBottom: '15px',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    gap: '5px', width: '200px', pointerEvents: 'none', zIndex: 50
+                    gap: '5px', width: '200px', pointerEvents: 'none', zIndex: 100
                 }}>
                     {bubbles.map(bubble => (
                         <div key={bubble.id} style={{
@@ -514,6 +529,7 @@ const RoomParticipantsCircle = ({ participants, chatBubbles, currentUser }) => {
                         }}>{bubble.text}</div>
                     ))}
                 </div>
+
                 {/* Avatar */}
                 <div style={{ position: 'relative', width: '40px', height: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{
@@ -536,7 +552,18 @@ const RoomParticipantsCircle = ({ participants, chatBubbles, currentUser }) => {
                             borderRadius: '4px 4px 0 0'
                         }} />
                     </div>
+                    {/* Floating Nameplate - Restored */}
+                    <div style={{
+                        position: 'absolute', top: '100%', marginTop: '5px',
+                        background: 'rgba(0,0,0,0.6)', color: 'white',
+                        padding: '2px 8px', borderRadius: '4px',
+                        fontSize: '12px', whiteSpace: 'nowrap',
+                        textShadow: '0 1px 2px black'
+                    }}>
+                        {username}
+                    </div>
                 </div>
+
                 {/* Ground shadow */}
                 <div style={{
                     position: 'absolute', bottom: '-5px',
@@ -554,14 +581,21 @@ const RoomParticipantsCircle = ({ participants, chatBubbles, currentUser }) => {
             position: 'absolute', top: '50%', left: '50%',
             width: '0', height: '0', zIndex: 40
         }}>
-            {/* Inner semi‑circle (top half) */}
+            {/* Inner semi-circle (Front Row) */}
             {participants.slice(0, innerCount).map((username, idx) => {
-                const angle = innerCount === 1 ? 0 : Math.PI * (idx / (innerCount - 1)) - Math.PI / 2; // -π/2 … π/2
+                // Distribute between PI/8 and 7PI/8
+                // If only 1, put at PI/2 (90 deg, center bottom)
+                const startAngle = Math.PI * 0.2;
+                const endAngle = Math.PI * 0.8;
+                const angle = innerCount === 1 ? Math.PI / 2 : startAngle + (idx / (innerCount - 1)) * (endAngle - startAngle);
                 return renderParticipant(username, innerRadius, angle);
             })}
-            {/* Outer full circle */}
+
+            {/* Outer semi-circle (Back Row - actually wider front row) */}
             {participants.slice(innerCount).map((username, idx) => {
-                const angle = outerCount === 0 ? 0 : (idx / outerCount) * 2 * Math.PI;
+                const startAngle = Math.PI * 0.15;
+                const endAngle = Math.PI * 0.85;
+                const angle = outerCount === 1 ? Math.PI / 2 : startAngle + (idx / (outerCount - 1)) * (endAngle - startAngle);
                 return renderParticipant(username, outerRadius, angle);
             })}
         </div>

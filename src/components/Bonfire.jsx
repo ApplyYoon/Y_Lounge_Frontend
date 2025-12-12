@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'normal' }) => {
     // Determine fire intensity: 0-10
     // Use explicit 'level' if provided (Game Mode), otherwise fallback to userCount (Lobby Mode)
-    const intensity = level !== undefined ? Math.min(level, 10) : Math.min(userCount || 0, 10);
+    // Scale level (0-5) to intensity (0-10) for visual impact
+    const intensity = level !== undefined ? Math.min(level * 2, 10) : Math.min(userCount || 0, 10);
     const isExtinguished = intensity === 0;
 
     // Scale size: Base + dramatic growth

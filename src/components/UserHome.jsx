@@ -17,8 +17,8 @@ const UserHome = ({ user, onLogout }) => {
     const [chatBubbles, setChatBubbles] = useState({});
     const [isMuted, setIsMuted] = useState(false);
 
-    const [fireLevel, setFireLevel] = useState(0); // 0-10
-    const [burnTimer, setBurnTimer] = useState(30); // Seconds until level drop
+    const [fireLevel, setFireLevel] = useState(0); // 0-5
+    const [burnTimer, setBurnTimer] = useState(180); // Seconds until level drop
 
     // Refs for accessing state in closures without triggering re-renders
     const stompClientRef = useRef(null);
@@ -66,7 +66,7 @@ const UserHome = ({ user, onLogout }) => {
                         // Sync fire state from others
                         if (signal.sender !== user.username) {
                             setFireLevel(signal.level);
-                            setBurnTimer(30); // Sync timer reset
+                            setBurnTimer(180); // Sync timer reset
                         }
                     } else if (signal.type === 'request_fire_sync') {
                         // If someone requests sync and we have fire, broadcast our state
@@ -184,7 +184,7 @@ const UserHome = ({ user, onLogout }) => {
                 if (prev <= 1) {
                     // Time up, drop level
                     setFireLevel(lvl => Math.max(0, lvl - 1));
-                    return 30; // Reset timer
+                    return 180; // Reset timer
                 }
                 return prev - 1;
             });
@@ -198,14 +198,14 @@ const UserHome = ({ user, onLogout }) => {
     const addFirewood = () => {
         if (fireLevel === 0) return; // Must be ignited first
 
-        setFireLevel(prev => Math.min(10, prev + 1));
-        setBurnTimer(30); // Reset decay
+        setFireLevel(prev => Math.min(5, prev + 1));
+        setBurnTimer(180); // Reset decay
 
         if (stompClientRef.current && stompClientRef.current.connected) {
             // Since setFireLevel is async, we can't trust 'fireLevel' here immediately.
             // Use the ref to get the current state for broadcast.
             const current = fireLevelRef.current;
-            const next = Math.min(10, current + 1);
+            const next = Math.min(5, current + 1);
             stompClientRef.current.publish({
                 destination: `/app/signal/${currentRoom}`,
                 body: JSON.stringify({ type: 'fire_update', level: next, sender: user.username })
@@ -221,7 +221,7 @@ const UserHome = ({ user, onLogout }) => {
 
     const igniteFire = () => {
         setFireLevel(1);
-        setBurnTimer(30);
+        setBurnTimer(180);
 
         if (stompClientRef.current && stompClientRef.current.connected) {
             stompClientRef.current.publish({
@@ -567,120 +567,7 @@ const RoomParticipantsCircle = ({ participants, chatBubbles, currentUser }) => {
         </div>
     );
 };
-const radius = 250; // Distance from fire
-const total = participants.length;
 
-return (
-    <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        width: '0', height: '0', zIndex: 40 // High z-index to ensure visibility
-    }}>
-        {participants.map((username, index) => {
-            const angle = (index / total) * 2 * Math.PI;
-            const x = radius * Math.cos(angle);
-            const y = radius * Math.sin(angle);
-            const yPersp = y * 0.7; // Perspective flattening
-
-            // Restore missing bubbles definition
-            const bubbles = chatBubbles[username] || [];
-
-            // Simple hash for color variation (optional, but requested grey)
-            const isMe = username === currentUser;
-
-            // Color Logic: Grey/Silver Theme
-            // Me: Bright Silver/White-ish (#e5e7eb)
-            // Others: Darker Grey (#9ca3af)
-            const baseColor = isMe ? '#e5e7eb' : '#9ca3af';
-            const bodyColor = isMe ? '#d1d5db' : '#6b7280';
-            const borderColor = isMe ? '#ffffff' : '#4b5563';
-
-            return (
-                <div key={username} style={{
-                    position: 'absolute',
-                    left: `${x}px`, top: `${yPersp}px`,
-                    transform: 'translate(-50%, -50%)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    transition: 'all 0.5s ease-out',
-                    // animation removed (stopped floating)
-                }}>
-                    {/* Chat Bubbles Stack */}
-                    <div style={{
-                        position: 'absolute', bottom: '100%', marginBottom: '15px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        gap: '5px', width: '200px', pointerEvents: 'none', zIndex: 50
-                    }}>
-                        {bubbles.map(bubble => (
-                            <div key={bubble.id} style={{
-                                background: 'rgba(255, 255, 255, 0.9)',
-                                color: '#111',
-                                border: '1px solid #ccc',
-                                padding: '6px 12px', borderRadius: '12px',
-                                fontSize: '14px', textAlign: 'center',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                            }}>
-                                {bubble.text}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Human Avatar Shape */}
-                    <div style={{ position: 'relative', width: '40px', height: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        {/* Head */}
-                        <div style={{
-                            width: '24px', height: '24px', borderRadius: '50%',
-                            background: baseColor,
-                            border: `1px solid ${borderColor}`,
-                            boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-                            zIndex: 2
-                        }}></div>
-
-                        {/* Body */}
-                        <div style={{
-                            width: '36px', height: '40px',
-                            borderRadius: '16px 16px 4px 4px',
-                            background: bodyColor,
-                            marginTop: '-4px',
-                            boxShadow: '0 4px 10px rgba(0,0,0,0.6)',
-                            zIndex: 1
-                        }}>
-                            {/* Scarf/Detail */}
-                            <div style={{
-                                width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)',
-                                borderRadius: '4px 4px 0 0'
-                            }}></div>
-                        </div>
-
-                        {/* Shadow on Ground */}
-                        <div style={{
-                            position: 'absolute', bottom: '-5px',
-                            width: '40px', height: '10px',
-                            background: 'rgba(0,0,0,0.5)',
-                            borderRadius: '50%',
-                            filter: 'blur(4px)',
-                            zIndex: 0
-                        }}></div>
-                    </div>
-
-                    {/* Nameplate */}
-                    <span style={{
-                        marginTop: '5px', color: '#eee', fontSize: '13px',
-                        fontWeight: 'bold', textShadow: '0 2px 4px black',
-                        background: 'rgba(0,0,0,0.6)', padding: '2px 8px', borderRadius: '8px',
-                    }}>
-                        {username} {isMe ? '(Me)' : ''}
-                    </span>
-                </div>
-            );
-        })}
-
-        <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-                    50% { transform: translate(-50%, -50%) translateY(-5px); }
-                }
-            `}</style>
-    </div>
-);
 
 
 export default UserHome;

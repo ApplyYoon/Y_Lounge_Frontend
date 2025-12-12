@@ -9,7 +9,7 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
 
     // Scale size: Base + dramatic growth
     const baseScale = size === 'large' ? 1.2 : 0.8;
-    const growthFactor = size === 'large' ? 0.1 : 0.05;
+    const growthFactor = size === 'large' ? 0.1 : 0.03;
     const scale = baseScale + (Math.max(0, intensity - 1) * growthFactor); // Don't shrink below base for 0 users
 
     // Fire warmth shifts from yellow/orange to raging red/white at high intensity
@@ -151,43 +151,43 @@ const Bonfire = ({ roomName, userCount, level, onClick, isHovered, size = 'norma
                     bottom: 12px;
                     width: 60px;
                     height: 60px;
-                    filter: drop-shadow(0 0 ${intensity * 2}px ${activeGlow});
+                    filter: drop-shadow(0 0 ${intensity * 1.5}px ${activeGlow});
                 }
                 .flame {
                     position: absolute;
                     bottom: 0;
                     left: 50%;
                     transform: translateX(-50%);
-                    width: ${20 + (intensity * 2)}px;
-                    height: ${20 + (intensity * 2)}px;
+                    width: ${20 + (intensity * 1.5)}px;
+                    height: ${20 + (intensity * 1.5)}px;
                     border-radius: 50% 50% 20% 20%;
                     background: ${activeGrad};
                     opacity: 0.8;
                     animation: burn 1s infinite alternate ease-in-out;
                 }
                 .flame.red {
-                    width: ${30 + (intensity * 3)}px; 
-                    height: ${50 + (intensity * 5)}px; 
+                    width: ${30 + (intensity * 2)}px; 
+                    height: ${50 + (intensity * 3.5)}px; 
                     background: ${activeRed}; 
                     animation-duration: 1.2s;
                 }
                 .flame.orange { 
-                    width: ${25 + (intensity * 2)}px; 
-                    height: ${40 + (intensity * 4)}px; 
+                    width: ${25 + (intensity * 1.5)}px; 
+                    height: ${40 + (intensity * 3)}px; 
                     background: ${activeOrange}; 
                     animation-duration: 1.5s;
                     bottom: 5px;
                 }
                 .flame.gold { 
-                    width: ${20 + (intensity * 1.5)}px; 
-                    height: ${30 + (intensity * 3)}px; 
+                    width: ${20 + (intensity * 1)}px; 
+                    height: ${30 + (intensity * 2)}px; 
                     background: ${activeGold}; 
                     animation-duration: 0.8s;
                     bottom: 10px;
                 }
                 .flame.white { 
-                    width: ${10 + (intensity)}px; 
-                    height: ${20 + (intensity * 2)}px; 
+                    width: ${10 + (intensity * 0.8)}px; 
+                    height: ${20 + (intensity * 1.5)}px; 
                     background: white; 
                     animation-duration: 0.6s;
                     bottom: 15px;
